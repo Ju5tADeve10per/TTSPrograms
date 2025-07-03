@@ -6,52 +6,61 @@ import uuid
 import os
 from pydub import AudioSegment
 
-st.set_page_config(page_title="読み上げアプリ", layout="centered")
-st.title("📢 文章読み上げアプリ（edge-tts版）")
+# 利用可能な話者リスト（全リストの中から一部抜粋）
+speakers = {
+    "Nanami (女性、標準)": "ja-JP-NanamiNeural",
+    "Keita (男性、 標準)": "ja-JP-KeitaNeural",
+}
 
-text = st.text_area("読み上げたい文章をここに入力してください。", height=300)
-rate = st.slider("読み上げ速度（%）", -50, 50, 0) # -50%から+50%まで調整可能
+st.set_page_config(page_title="TTSアプリ", layout="centered")
+st.title("📢 読み上げアプリ")
 
-async def generate_tts(text, rate):
+with st.form("tts_form"):
+    text = st.text_area("読み上げたい文章を入力してください。", height=300)
+    rate = st.slider("読み上げ速度 (%) ", -50, 50, 0, format="%d%%")
+    speaker_name = st.selectbox("読み手（話者）を選んでください。", list(speakers.keys()))
+    submit = st.form_submit_button("🔊 音声を生成")
+
+async def generate_tts(text, voice, rate):
     filename = f"temp_{uuid.uuid4().hex}.mp3"
-    # rateに符号をつける処理
+    # rateの符号付け - edge_tts.Communicate()の仕様のため。
     if rate == 0:
         rate_str = "+0%"
     elif rate > 0:
         rate_str = f"+{rate}%"
     else:
         rate_str = f"{rate}%"
-    communicate = edge_tts.Communicate(text, "ja-JP-NanamiNeural", rate=rate_str)
+    communicate = edge_tts.Communicate(text, voice, rate=rate_str)
     await communicate.save(filename)
 
-    # pydubで読み込み
+    # 音声を読み込む
     voice = AudioSegment.from_file(filename, format="mp3")
 
-    # 3秒無音を作成
-    silence = AudioSegment.silent(duration=3000)
+    # 3秒間の無音を作成
+    silence = AudioSegment.silent(duration=3000) # 3000ms = 3秒
 
-    # 音声と無音を連結
+    # 無音を前にくっつける
     combined = silence + voice
 
     # 上書き保存
     combined.export(filename, format="mp3")
+
     return filename
 
-if st.button("🔊 読み上げ開始"):
+if submit:
     if not text.strip():
         st.warning("文章を入力してください。")
     else:
-        st.success("音声を生成中...少しお待ちください。")
+        st.success("音声を生成中です。少々お待ちください...")
+        voice = speakers[speaker_name]
+        filename = asyncio.run(generate_tts(text, voice, rate))
 
-        # 非同期関数を実行するためにasyncio.runを使う
-        filename = asyncio.run(generate_tts(text, rate))
-        
-        # mp3ファイルをbase64に変換してaudioタグで再生
+        # base64に変換して埋めこみ
         with open(filename, "rb") as f:
             audio_bytes = f.read()
-        b64_audio = base64.b64encode(audio_bytes).decode()
         os.remove(filename)
 
+        b64_audio = base64.b64encode(audio_bytes).decode()
         audio_html = f"""
         <audio controls>
             <source src="data:audio/mp3;base64,{b64_audio}" type="audio/mp3">
