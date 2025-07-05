@@ -6,61 +6,59 @@ import uuid
 import os
 from pydub import AudioSegment
 
-# 利用可能な話者リスト（全リストの中から一部抜粋）
-speakers = {
-    "Nanami (女性、標準)": "ja-JP-NanamiNeural",
-    "Keita (男性、 標準)": "ja-JP-KeitaNeural",
+# 音声リスト（言語ごとに整理）
+VOICE_OPTIONS = {
+    "日本語": {
+        "lang_code": "ja-JP",
+        "voices": ["ja-JP-NanamiNeural", "ja-JP-KeitaNeural"]
+    },
+    "English": {
+        "lang_code": "en-US",
+        "voices": ["en-US-AriaNeural", "en-US-GuyNeural"]
+    }
 }
 
-st.set_page_config(page_title="TTSアプリ", layout="centered")
-st.title("📢 読み上げアプリ")
+# Streamlit Layout Config
+st.set_page_config(page_title="読み上げアプリ", layout="centered")
+st.title("📢 文章読み上げアプリ")
 
-with st.form("tts_form"):
-    text = st.text_area("読み上げたい文章を入力してください。", height=300)
-    rate = st.slider("読み上げ速度 (%) ", -50, 50, 0, format="%d%%")
-    speaker_name = st.selectbox("読み手（話者）を選んでください。", list(speakers.keys()))
-    submit = st.form_submit_button("🔊 音声を生成")
+# 入力UI
+text = st.text_area("読み上げたい文章を入力してください。", height=300)
+language = st.selectbox("言語を選択してください。", list(VOICE_OPTIONS.keys()))
+voice = st.selectbox("読み手の声を選択してください。", VOICE_OPTIONS[language]["voices"])
+rate = st.slider("読み上げ速度（%）", -50, 50, 0)
 
+# TTS音声生成 (+3秒の無音の追加)
 async def generate_tts(text, voice, rate):
     filename = f"temp_{uuid.uuid4().hex}.mp3"
-    # rateの符号付け - edge_tts.Communicate()の仕様のため。
-    if rate == 0:
-        rate_str = "+0%"
-    elif rate > 0:
-        rate_str = f"+{rate}%"
-    else:
-        rate_str = f"{rate}%"
-    communicate = edge_tts.Communicate(text, voice, rate=rate_str)
-    await communicate.save(filename)
+    communicate = edge_tts.Communicate(text, voice, rate=f"{'+' if rate >= 0 else ''}{rate}%")
+    await communicate.save("voice.mp3")
 
-    # 音声を読み込む
-    voice = AudioSegment.from_file(filename, format="mp3")
-
-    # 3秒間の無音を作成
-    silence = AudioSegment.silent(duration=3000) # 3000ms = 3秒
-
-    # 無音を前にくっつける
-    combined = silence + voice
-
-    # 上書き保存
+    # 無音（3秒）と合成
+    silence = AudioSegment.silent(duration=3000)
+    voice_audio = AudioSegment.from_file("voice.mp3", format="mp3")
+    combined = silence + voice_audio
     combined.export(filename, format="mp3")
 
+    os.remove("voice.mp3")
     return filename
 
-if submit:
+# ボタンクリック処理
+if st.button("読み上げ開始"):
     if not text.strip():
-        st.warning("文章を入力してください。")
+        st.warning("⚠️ 文章を入力してください。")
+    elif voice not in VOICE_OPTIONS[language]["voices"]:
+        st.warning("⚠️ 選択された音声は選んだ言語に対応していません。")
     else:
-        st.success("音声を生成中です。少々お待ちください...")
-        voice = speakers[speaker_name]
+        st.success("🔄 音声を生成中...少しお待ちください。")
+
         filename = asyncio.run(generate_tts(text, voice, rate))
 
-        # base64に変換して埋めこみ
         with open(filename, "rb") as f:
             audio_bytes = f.read()
+        b64_audio = base64.b64encode(audio_bytes).decode()
         os.remove(filename)
 
-        b64_audio = base64.b64encode(audio_bytes).decode()
         audio_html = f"""
         <audio controls>
             <source src="data:audio/mp3;base64,{b64_audio}" type="audio/mp3">
