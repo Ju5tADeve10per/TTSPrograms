@@ -3,6 +3,7 @@
 
 ## 🚀TTSアプリを使う
 Streamlit Cloud上で公開中：https://hiyj8krmjmfrx35frxaiej.streamlit.app/
+
 ※リンクを新しいタブで開きたい場合は、
 - Windows/Linuxでは Ctrl + クリック、
 - Macでは Cmd + クリック をしてください。
