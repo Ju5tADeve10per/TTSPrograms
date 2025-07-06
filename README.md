@@ -2,7 +2,7 @@
 このアプリは、入力した文章を音声として再生できるシンプルなTTS (Text-to-Speech) アプリです。
 
 ## 🚀TTSアプリを使う
-Streamlit Cloud上で公開中：https://hiyj8krmjmfrx35frxaiej.streamlit.app/
+Streamlit Cloud上で公開中：<a href="https://hiyj8krmjmfrx35frxaiej.streamlit.app/" target="_blank">https://hiyj8krmjmfrx35frxaiej.streamlit.app/</a>
 
 ## 🧩主な機能
 - 日本語 / 英語の音声選択（Nanami, Keita, Aria, Guy）
@@ -41,7 +41,7 @@ streamlit run app.py
 ## 📝 備考
 - 入力文とVoiceが対応しないと音声は再生されません。
 - 音声ファイルは一時的に生成され、使用後は削除されます。
-- 日本語と英語を混ぜた文章を読ませる場合、日本語音声では機能することがありますが英語ではありません。よって推奨はされません。
+- 日本語と英語を混ぜた文章を読ませる場合、日本語音声では機能することがありますが英語ではできません。よって推奨はされません。
 
 ## 👤 作者
 とある開発者
