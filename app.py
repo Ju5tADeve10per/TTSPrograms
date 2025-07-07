@@ -82,5 +82,5 @@ if st.button("🔊 音声を生成"):
             Your browser does not support the audio element.
         </audio>
         """
-        st.markdown("### ▶️ 生成された音声ファイル（ここで再生できます）")
+        st.markdown("### ▶️ 生成された音声ファイル")
         st.components.v1.html(audio_html, height=80)
