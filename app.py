@@ -13,7 +13,7 @@ def clear_text():
 
 # TTS生成関数（無音を追加）
 async def generate_tts(text, voice, rate):
-    raw_filename = f"tmep_raw_{uuid.uuid4().hex}.mp3"
+    raw_filename = f"temp_raw_{uuid.uuid4().hex}.mp3"
     final_filename = f"temp_final_{uuid.uuid4().hex}.mp3"
 
     # 音声を生成
@@ -52,7 +52,7 @@ voices = {
 voice_name = st.selectbox("読み上げ音声を選んでください。", list(voices.keys()))
 voice = voices[voice_name]
 
-if st.button("🔊 読み上げ開始"):
+if st.button("🔊 音声を生成"):
     if not text.strip():
         st.warning("文章を入力してください。")
     else:
@@ -82,4 +82,5 @@ if st.button("🔊 読み上げ開始"):
             Your browser does not support the audio element.
         </audio>
         """
+        st.markdown("### ▶️ 生成された音声ファイル（ここで再生できます）")
         st.components.v1.html(audio_html, height=80)
